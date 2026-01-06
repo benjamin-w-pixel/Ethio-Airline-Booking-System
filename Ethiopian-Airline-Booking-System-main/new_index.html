@@ -1,0 +1,1202 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="system_title">Airline Booking System</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* CRITICAL MODAL FIXES - FORCE OVERRIDE */
+        /* Target all modals specifically to ensure they are on top */
+        #seat-modal, #payment-method-modal, #payment-modal, #rate-modal, #rate-us-modal, .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999 !important;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.85) !important;
+            backdrop-filter: blur(5px);
+            overflow: auto; /* Enable scrolling if needed */
+        }
+
+        /* Solid White Cards */
+        .modal-content, 
+        .ethiopian-seat-modal, 
+        #payment-modal .modal-content,
+        #payment-method-modal .modal-content {
+            background-color: #ffffff !important;
+            margin: 5% auto !important;
+            padding: 30px !important;
+            border: 1px solid #ccc !important;
+            border-top: 6px solid #006400 !important; /* Ethiopian Green */
+            width: 90% !important;
+            max-width: 550px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5) !important;
+            position: relative;
+            color: #333 !important;
+            opacity: 1 !important;
+            animation: modalSlide 0.3s ease-out !important;
+        }
+
+        @keyframes modalSlide {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Ensure all text is RED and BOLD as requested */
+        .modal-content h2, 
+        .modal-content h3, 
+        .modal-content p, 
+        .modal-content label, 
+        .modal-content strong, 
+        .modal-content span,
+        .method-name {
+            color: #DA121A !important; /* Ethiopian RED */
+            opacity: 1 !important;
+            text-shadow: none !important;
+            font-weight: 800 !important; /* Extra Bold */
+        }
+
+        /* Fix Inputs */
+        .modal-content input, .modal-content select, .modal-content textarea {
+            background: #ffffff !important;
+            border: 2px solid #9ca3af !important;
+            color: #000000 !important;
+            width: 100% !important;
+            padding: 12px 15px !important;
+            margin: 8px 0 20px 0 !important;
+            border-radius: 8px !important;
+            box-sizing: border-box !important;
+            font-size: 16px !important;
+            display: block !important;
+            font-weight: 500 !important;
+        }
+
+        /* Fix Buttons */
+        .modal-actions {
+            display: flex !important;
+            justify-content: flex-end !important;
+            gap: 15px !important;
+            margin-top: 25px !important;
+            padding-top: 20px !important;
+            border-top: 1px solid #eee !important;
+        }
+
+        /* Payment Cards */
+        .payment-method-card {
+            background: #f8f9fa !important;
+            border: 2px solid #e9ecef !important;
+            border-radius: 8px !important;
+            padding: 15px !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+        }
+        .payment-method-card:hover {
+            border-color: #006400 !important;
+            transform: translateY(-3px);
+            background: #fff !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        }
+
+        /* --- SEAT MAP FIXES --- */
+        #ethiopian-seat-map {
+            display: grid !important;
+            grid-template-columns: repeat(6, 1fr) !important;
+            gap: 10px !important;
+            padding: 20px !important;
+            background: #f1f5f9 !important;
+            border-radius: 8px !important;
+            max-height: 400px !important;
+            overflow-y: auto !important;
+            margin-top: 15px !important;
+            pointer-events: auto !important; /* Force clicks */
+        }
+
+        .ethiopian-seat-modal-seat {
+            width: 45px !important;
+            height: 45px !important;
+            border-radius: 8px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 14px !important;
+            font-weight: bold !important;
+            cursor: pointer !important;
+            border: 2px solid transparent !important;
+            user-select: none !important;
+            position: relative !important;
+            z-index: 100 !important;
+            transition: all 0.2s !important;
+        }
+
+        /* Available - Green */
+        .ethiopian-seat-modal-seat.available {
+            background: #10b981 !important;
+            color: white !important;
+            border: 2px solid #059669 !important;
+        }
+        .ethiopian-seat-modal-seat.available:hover {
+            transform: scale(1.15) !important;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5) !important;
+            background: #059669 !important;
+        }
+
+        /* Selected - Yellow/Gold */
+        .ethiopian-seat-modal-seat.selected {
+            background: #FCDD09 !important; /* Ethiopian Yellow */
+            color: #000 !important;
+            border: 2px solid #DA121A !important; /* Red Border */
+            transform: scale(1.1) !important;
+            box-shadow: 0 0 15px rgba(252, 221, 9, 0.6) !important;
+        }
+
+        /* Reserved - Gray */
+        .ethiopian-seat-modal-seat.reserved {
+            background: #cbd5e1 !important;
+            color: #64748b !important;
+            cursor: not-allowed !important;
+            border: 2px solid #94a3b8 !important;
+            pointer-events: none !important;
+        }
+
+        /* Legend */
+        .seat-legend {
+            display: flex !important;
+            gap: 20px !important;
+            justify-content: center !important;
+            margin-top: 20px !important;
+            padding: 10px !important;
+            background: #f8fafc !important;
+            border-radius: 8px !important;
+        }
+        .seat-legend-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            font-size: 14px !important;
+            color: #333 !important;
+        }
+        .seat-legend-box {
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 4px !important;
+        }
+        .seat-legend-box.available { background: #10b981 !important; }
+        .seat-legend-box.selected { background: #FCDD09 !important; }
+        .seat-legend-box.reserved { background: #cbd5e1 !important; }
+    </style>
+    </style>
+</head>
+<body class="">
+    <!-- Language Switcher -->
+    <div class="language-switcher">
+        <button class="lang-btn" onclick="switchLanguage('am')">አማርኛ</button>
+        <button class="lang-btn active" onclick="switchLanguage('en')">English</button>
+    </div>
+
+    <div class="container">
+        <!-- Main Menu -->
+        <div id="main-menu" class="screen active">
+            <div class="airline-logo">
+       <div class="airline-logo-icon">AE</div>
+        <div>
+            <div class="airline-logo-text" data-i18n="airline_name">ETHIOPIAN AIRLINES</div>
+            <div class="airline-tagline" data-i18n="airline_tagline">THE NEW EXPERIENCE</div>
+          </div>
+        </div>
+
+            <div class="main-menu-welcome">
+                <h1 data-i18n="main_title">Airline Booking Systems</h1>
+                <p data-i18n="main_subtitle">welcome to Airline Booking System</p>
+                 <!-- About System Button -->
+       <div class="about-system-btn-container">
+    <button class="btn btn-info" onclick="showAboutSystem()" data-i18n="about_system">
+         About Airline Booking System
+    </button>
+</div><br><br>
+                 <!-- Registration/Login Prompt - No box, just text -->
+        <div class="login-prompt-text">
+            <p>If you are registered before, <br>login here 👇</p>
+        </div>
+            </div>
+  
+            <!-- Horizontal Menu Options - All three buttons side by side -->
+            <div class="menu-options-horizontal">
+                <button class="btn btn-primary" onclick="showScreen('passenger-register')" data-i18n="passenger_register">Passenger Registration</button>
+                <button class="btn btn-secondary" onclick="showScreen('passenger-login')" data-i18n="passenger_login">Passenger Login
+                   
+                </button>
+                
+                
+                <button class="btn btn-secondary" onclick="showScreen('admin-login')" data-i18n="admin_login">Admin Login</button>
+            </div>
+            
+     <!-- Reset System Button -->
+            <!-- <div class="reset-system-container">
+                <button class="btn btn-danger" onclick="resetSystem()" data-i18n="reset_system">🗑️ Reset System (Clear All Data)</button>
+            </div> 
+             -->
+            <div class="existing-users">
+                <h3 data-i18n="existing_users">Existing Users:</h3>
+                <div id="existing-passengers"><p class="message info">No passengers registered yet.</p></div>
+                <div id="existing-admins"><h4>Admins:</h4><div class="user-list">
+                <div class="user-item">
+                    <span class="user-info">RESPECT_WORLD</span>
+                    <button class="quick-login-btn" onclick="quickLoginAdmin('RESPECT_WORLD')">
+                        Quick Login
+                    </button>
+                </div>
+            </div></div>
+            </div>
+        </div>
+<!-- About System Modal -->
+<div id="about-system-modal" class="modal">
+    <div class="modal-content about-modal-content">
+        <div class="about-modal-header">
+            <h2 data-i18n="about_title">About Ethiopian Airlines Booking System</h2>
+            <button class="btn-close" onclick="closeAboutModal()">&times;</button>
+        </div>
+        <div class="about-modal-body">
+            <div class="about-section">
+                <h3 data-i18n="about_features"> System Features</h3>
+                <ul>
+                    <li data-i18n="feature_registration">Easy Registration: Quick passenger registration with secure data storage</li>
+                    <li data-i18n="feature_booking">Flight Booking: Browse and book available flights with real-time seat availability</li>
+                    <li data-i18n="feature_seats">Seat Selection: Interactive seat map for choosing preferred seats</li>
+                    <li data-i18n="feature_payment">Secure Payment: Safe payment processing for flight bookings</li>
+                    <li data-i18n="feature_management">Booking Management: View and manage your flight bookings</li>
+                    <li data-i18n="feature_search">Flight Search: Search flights by destination and departure city</li>
+                </ul>
+            </div>
+            
+            <div class="about-section">
+                <h3 data-i18n="about_user_types"> User Types</h3>
+                <div class="user-types">
+                    <div class="user-type-card">
+                        <h4 data-i18n="user_passengers">Passengers</h4>
+                        <p data-i18n="user_passenger1">• Register and create account</p>
+                        <p data-i18n="user_passenger2">• Book flights and select seats</p>
+                        <p data-i18n="user_passenger3">• View booking history</p>
+                        <p data-i18n="user_passenger4">• Search available flights</p>
+                    </div>
+                    <div class="user-type-card">
+                        <h4 data-i18n="user_admins">Administrators</h4>
+                        <p data-i18n="user_admin1">• Add new flights to the system</p>
+                        <p data-i18n="user_admin2">• Manage flight seat availability</p>
+                        <p data-i18n="user_admin3">• View all bookings</p>
+                        <p data-i18n="user_admin4">• Access system statistics</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="about-section">
+                <h3 data-i18n="about_flight_info">Flight Information</h3>
+                <p data-i18n="flight_info_text">Our system includes flights to major Ethiopian destinations:</p>
+                <div class="destinations">
+                    <span class="destination-tag">Addis Ababa (ADD)</span>
+                    <span class="destination-tag">Bahir Dar (BJR)</span>
+                    <span class="destination-tag">Mekele (MQX)</span>
+                    <span class="destination-tag">Gondar (GDQ)</span>
+                    <span class="destination-tag">Hawassa (AWA)</span>
+                    <span class="destination-tag">Dire Dawa (DIR)</span>
+                    <span class="destination-tag">Axum (AXU)</span>
+                    <span class="destination-tag">Lalibela (LLI)</span>
+                </div>
+            </div>
+            
+            <div class="about-section">
+                <h3 data-i18n="about_security"> Security & Privacy</h3>
+                <p data-i18n="security1">• All passenger data is securely stored locally</p>
+                <p data-i18n="security2">• Passwords are protected</p>
+                <p data-i18n="security3">• Secure payment processing</p>
+                <p data-i18n="security4">• Data privacy compliance</p>
+            </div>
+            
+            <div class="about-section">
+                <h3 data-i18n="about_multilanguage"> Multi-language Support</h3>
+                <p data-i18n="multilanguage_text">The system supports both English and Amharic languages. Use the language switcher in the top-right corner to change languages.</p>
+            </div>
+            
+            <div class="about-section">
+                <h3 data-i18n="about_getting_started"> Getting Started</h3>
+                <p data-i18n="start1">1.New Users: Click "Passenger Registration" to create an account</p>
+                <p data-i18n="start2">2.Returning Users: Click "Passenger Login" to access your account</p>
+                <p data-i18n="start3">3.Admin Access: Use "Admin Login" for system management</p>
+                <p data-i18n="start4">4.Quick Login: Use the "Existing Users" section for quick access</p>
+            </div>
+        </div>
+        <div class="about-modal-footer">
+            <p class="system-version">System Version: 2.0 | Last Updated: December 2024</p>
+            <button class="btn btn-primary" onclick="closeAboutModal()" data-i18n="close_button">Close</button>
+        </div>
+    </div>
+</div>
+        <!-- Passenger Registration -->
+        <div id="passenger-register" class="screen">
+            <div class="airline-logo">
+                <div class="airline-logo-icon">AE</div>
+                <div>
+                    <div class="airline-logo-text">ETHIOPIAN AIRLINES</div>
+                    <div class="airline-tagline">THE NEW EXPERIENCE</div>
+                </div>
+            </div>
+            <div class="header">
+                <h2 data-i18n="passenger_register">Passenger Registration</h2>
+                <button class="btn btn-back" onclick="showScreen('main-menu')" data-i18n="back">← Back</button>
+            </div>
+            <form class="form" onsubmit="registerPassenger(event)">
+                <div class="form-group">
+                    <label for="passenger-name" data-i18n="full_name">Full Name</label>
+                    <input type="text" id="passenger-name" data-i18n-placeholder="full_name" required="" placeholder="Full Name">
+                </div>
+                   <div class="form-group">
+                       <label for="passenger-username" data-i18n="username">Username</label>
+                       <input type="text" id="passenger-username" data-i18n-placeholder="username" required="" placeholder="Username">
+                   </div>
+                <div class="form-group">
+                   <label for="passenger-gender" data-i18n="gender">Gender</label>
+                   <select id="passenger-gender" required="">
+                       <option value="" disabled selected data-i18n="choose_gender">Choose your gender</option>
+                       <option value="Male" data-i18n="gender_male">Male</option>
+                       <option value="Female" data-i18n="gender_female">Female</option>
+                       <option value="Other" data-i18n="gender_other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="passenger-age" data-i18n="age">Age</label>
+                    <input type="number" id="passenger-age" data-i18n-placeholder="age" required="" placeholder="Enter your age" min="0" max="120">
+                <div class="input-announcement">
+                    <strong data-i18n="age_policies_title">Age-Based Policies:</strong><br>
+                    <span data-i18n="age_policy1">• Under 2: Infants (may travel free/lap infant)</span><br>
+                    <span data-i18n="age_policy2">• 2-4: Children (usually need paid seat)</span><br>
+                    <span data-i18n="age_policy3">• 5-11: Unaccompanied Minor service may be required</span><br>
+                    <span data-i18n="age_policy4">• 12+: Considered adult for ticketing</span>
+                </div>
+                </div>
+                <div class="form-group">
+                    <label for="passenger-email" data-i18n="email">Email</label>
+                     <input type="email" id="passenger-email" data-i18n-placeholder="email_placeholder" placeholder="youremail@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="passenger-passport" data-i18n="passport_number">Passport Number</label>
+                    <input type="text" id="passenger-passport" data-i18n-placeholder="passport_number" required="" placeholder="Passport Number">
+                    <div class="input-announcement" data-i18n="passport_announcement">Enter 13-19 digit passport number</div>
+                </div>
+                <div class="form-group">
+                    <label for="passenger-password" data-i18n="password">Password</label>
+                    <input type="password" id="passenger-password" data-i18n-placeholder="password" required="" placeholder="Password">
+                </div>
+                   <div class="form-group">
+                    <div class="input-announcement" data-i18n="password_announcement">Minimum 8 characters required</div>
+                       <label for="passenger-confirm-password" data-i18n="confirm_password">Confirm Password</label>
+                       <input type="password" id="passenger-confirm-password" data-i18n-placeholder="confirm_password" required="">
+                   </div>
+                <button type="submit" class="btn btn-primary" data-i18n="register">Register</button>
+            </form>
+            <div class="form-footer">
+                <p data-i18n="have_account">Already have an account? <a href="#" onclick="showScreen('passenger-login')" data-i18n="login_here">Login here</a></p>
+            </div>
+            <div id="passenger-register-message" class="message"></div>
+        </div>
+
+        <!-- Passenger Login -->
+        <div id="passenger-login" class="screen login-screen">
+            <div class="airline-logo">
+                <div class="airline-logo-icon">AE</div>
+                <div>
+                    <div class="airline-logo-text">ETHIOPIAN AIRLINES</div>
+                    <div class="airline-tagline">THE NEW EXPERIENCE</div>
+                </div>
+            </div>
+            <div class="header">
+                <h2 data-i18n="passenger_login">Passenger Login</h2>
+                <button class="btn btn-back" onclick="showScreen('main-menu')" data-i18n="back">← Back</button>
+            </div>
+            <form class="form" onsubmit="loginPassenger(event)">
+                <div class="form-group">
+                        <label for="login-username" data-i18n="username">Username</label>
+                        <input type="text" id="login-username" data-i18n-placeholder="username" required="" placeholder="Username">
+                </div>
+                <div class="form-group">
+                    <label for="login-password" data-i18n="password">Password</label>
+                    <input type="password" id="login-password" data-i18n-placeholder="password" required="" placeholder="Password">
+                </div>
+                <button type="submit" class="btn btn-primary" data-i18n="login">Login</button>
+            </form>
+            <div class="form-footer">
+                <p data-i18n="no_account">Don't have an account? <a href="#" onclick="showScreen('passenger-register')" data-i18n="register_here">Register here</a></p>
+            </div>
+            <div class="quick-login">
+                <h4 data-i18n="quick_login">Quick Login (Existing Passengers):</h4>
+                <div id="passenger-quick-login"></div>
+            </div>
+            <div id="passenger-login-message" class="message"></div>
+        </div>
+
+        <!-- Admin Login -->
+        <div id="admin-login" class="screen login-screen">
+            <div class="airline-logo">
+                <div class="airline-logo-icon">AE</div>
+                <div>
+                    <div class="airline-logo-text">ETHIOPIAN AIRLINES</div>
+                    <div class="airline-tagline">THE NEW EXPERIENCE</div>
+                </div>
+            </div>
+            <div class="header">
+                <h2 data-i18n="admin_login">Admin Login</h2>
+                <button class="btn btn-back" onclick="showScreen('main-menu')" data-i18n="back">← Back</button>
+            </div>
+            <form class="form" onsubmit="loginAdmin(event)">
+                <div class="form-group">
+                    <label for="admin-login-username" data-i18n="username">Username</label>
+                    <input type="text" id="admin-login-username" data-i18n-placeholder="username" required="" placeholder="Username">
+                </div>
+                <div class="form-group">
+                    <label for="admin-login-password" data-i18n="password">Password</label>
+                    <input type="password" id="admin-login-password" data-i18n-placeholder="password" required="" placeholder="Password">
+                </div>
+                <button type="submit" class="btn btn-primary" data-i18n="login">Login</button>
+            </form>
+            <div class="quick-login">
+                <h4 data-i18n="quick_login_admin">Quick Login (Existing Admins):</h4>
+                <div id="admin-quick-login"></div>
+            </div>
+            <div id="admin-login-message" class="message"></div>
+        </div>
+
+        <!-- Passenger Dashboard -->
+        <div id="passenger-dashboard" class="screen">
+            <div class="airline-logo">
+                <div class="airline-logo-icon">AE</div>
+                <div>
+                    <div class="airline-logo-text">ETHIOPIAN AIRLINES</div>
+                    <div class="airline-tagline">THE NEW EXPERIENCE</div>
+                </div>
+            </div>
+            <div class="header">
+                <h2 data-i18n="passenger_dashboard">Passenger Dashboard</h2>
+                <div class="header-controls">
+                    <span id="passenger-welcome" data-i18n="welcome">Welcome!</span>
+                    <button class="btn btn-logout" onclick="logout()" data-i18n="logout">🚪 Logout</button>
+                </div>
+            </div>
+
+            <div class="dashboard-menu">
+                <button class="btn btn-primary" onclick="showPassengerSection('book-flight')" data-i18n="book_flight">Book Flight</button>
+                <button class="btn btn-secondary" onclick="showPassengerSection('search-flights')" data-i18n="search_flights">Search Flights</button>
+                <button class="btn btn-secondary" onclick="showPassengerSection('my-bookings')" data-i18n="my_bookings">My Bookings</button>
+            </div>
+
+            <!-- Book Flight Section -->
+            <div id="book-flight" class="section dashboard-section active">
+                <h3 data-i18n="available_flights">Available Flights</h3>
+                <div id="flights-list"></div>
+            </div>
+
+            <!-- Search Flights Section -->
+            <div id="search-flights" class="section dashboard-section">
+                <h3 data-i18n="search_flights">Search Flights</h3>
+                <div class="form-inline">
+                    <div class="form-group">
+                        <label for="search-from" data-i18n="from">From</label>
+                        <input type="text" id="search-from" data-i18n-placeholder="from" placeholder="From">
+                    </div>
+                    <div class="form-group">
+                        <label for="search-to" data-i18n="to">To</label>
+                        <input type="text" id="search-to" data-i18n-placeholder="to" placeholder="To">
+                    </div>
+                    <button class="btn btn-primary" onclick="searchFlights()" data-i18n="search">Search</button>
+                </div>
+                <div id="search-results"></div>
+            </div>
+
+            <!-- My Bookings Section -->
+            <div id="my-bookings" class="section dashboard-section">
+                <h3 data-i18n="my_bookings">My Bookings</h3>
+                <div id="my-bookings-list"></div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="screen admin-dashboard">
+            <div class="airline-logo">
+                <div class="airline-logo-icon">AE</div>
+                <div>
+                    <div class="airline-logo-text">ETHIOPIAN AIRLINES</div>
+                    <div class="airline-tagline">THE NEW EXPERIENCE</div>
+                </div>
+            </div>
+            <div class="header">
+                <h2 data-i18n="admin_dashboard">Admin Dashboard</h2>
+                <div class="header-controls">
+                    <span id="admin-welcome" data-i18n="welcome_admin">Welcome, Admin!</span>
+                    <button class="btn btn-logout" onclick="logout()" data-i18n="logout">🚪 Logout</button>
+                </div>
+            </div>
+
+            <div class="dashboard-menu">
+                <button class="btn btn-primary" onclick="showAdminSection('add-flight')" data-i18n="add_flight">Add Flight</button>
+                <button class="btn btn-secondary" onclick="showAdminSection('manage-flights')" data-i18n="manage_flights">Manage Flights</button>
+                <button class="btn btn-secondary" onclick="showAdminSection('view-bookings')" data-i18n="view_bookings">View Bookings</button>
+                <button class="btn btn-warning" onclick="showAdminSection('statistics')" data-i18n="statistics">Statistics</button>
+            </div>
+
+            <!-- Add Flight Section -->
+            <div id="add-flight" class="section dashboard-section active">
+                <h3 data-i18n="add_new_flight">Add New Flight</h3>
+                <form class="form" onsubmit="addFlight(event)">
+                    <div class="form-group">
+                        <label for="flight-number" data-i18n="flight_number">Flight Number</label>
+                        <input type="text" id="flight-number" data-i18n-placeholder="flight_number" required="" placeholder="Flight Number">
+                    </div>
+                    <div class="form-group">
+                        <label for="flight-source" data-i18n="from">From</label>
+                        <input type="text" id="flight-source" data-i18n-placeholder="from" required="" placeholder="From">
+                    </div>
+                    <div class="form-group">
+                        <label for="flight-destination" data-i18n="to">To</label>
+                        <input type="text" id="flight-destination" data-i18n-placeholder="to" required="" placeholder="To">
+                    </div>
+                    <div class="form-group">
+                        <label for="flight-time" data-i18n="departure_time">Departure Time (HH:MM)</label>
+                        <input type="text" id="flight-time" data-i18n-placeholder="departure_time" required="" placeholder="Departure Time (HH:MM)">
+                    </div>
+                    <div class="form-group">
+                        <label for="flight-seats" data-i18n="seats_available">Seats Available</label>
+                        <input type="number" id="flight-seats" data-i18n-placeholder="seats_available" required="" placeholder="Seats Available">
+                    </div>
+                    <div class="form-group">
+                        <label for="flight-price" data-i18n="price">Price ($)</label>
+                        <input type="number" id="flight-price" data-i18n-placeholder="price" step="0.01" required="" placeholder="Price ($)">
+                    </div>
+                    <button type="submit" class="btn btn-primary" data-i18n="add_flight">Add Flight</button>
+                </form>
+                <div id="add-flight-message" class="message"></div>
+            </div>
+
+            <!-- Manage Flights Section -->
+            <div id="manage-flights" class="section dashboard-section">
+                <h3 data-i18n="manage_flights">Manage Flights</h3>
+                <div id="manage-flights-list"></div>
+            </div>
+
+            <!-- View Bookings Section -->
+            <div id="view-bookings" class="section dashboard-section">
+                <h3 data-i18n="all_bookings">All Bookings</h3>
+                <div id="all-bookings-list"></div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div id="statistics" class="section dashboard-section">
+                <h3 data-i18n="flight_statistics">Flight Statistics</h3>
+                <div id="statistics-content"></div>
+            </div>
+        </div>
+
+        <!-- modals removed from here and placed after container to avoid clipping -->
+    </div>
+    <!-- Payment Method Selection Modal -->
+<div id="payment-method-modal" class="modal">
+    <div class="modal-content payment-modal-content">
+        <div class="payment-modal-header">
+            <h3 data-i18n="select_payment_method">Select Payment Method</h3>
+        </div>
+        <div class="payment-modal-amount">
+            <p data-i18n="payment_for">Payment for: <span id="method-flight-info"></span></p>
+            <p data-i18n="amount">Amount: $<span id="method-payment-amount">0</span></p>
+        </div>
+        <div class="payment-methods-container">
+            <div class="payment-method-card" onclick="selectPaymentMethod('visa')">
+                <div class="payment-method-icon">💳</div>
+                <div class="payment-method-info">
+                    <h4>Visa / MasterCard</h4>
+                    <p>Credit or Debit Card</p>
+                </div>
+                <div class="payment-method-select">✓</div>
+            </div>
+            
+            <div class="payment-method-card" onclick="selectPaymentMethod('paypal')">
+                <div class="payment-method-icon">🔵</div>
+                <div class="payment-method-info">
+                    <h4>PayPal</h4>
+                    <p>Pay with PayPal account</p>
+                </div>
+                <div class="payment-method-select">✓</div>
+            </div>
+            
+            <div class="payment-method-card" onclick="selectPaymentMethod('bank')">
+                <div class="payment-method-icon">🏦</div>
+                <div class="payment-method-info">
+                    <h4>Bank Transfer</h4>
+                    <p>Direct bank transfer</p>
+                </div>
+                <div class="payment-method-select">✓</div>
+            </div>
+            
+            <div class="payment-method-card" onclick="selectPaymentMethod('mobile')">
+                <div class="payment-method-icon">📱</div>
+                <div class="payment-method-info">
+                    <h4>Mobile Money</h4>
+                    <p>M-Pesa, CBE Birr, etc.</p>
+                </div>
+                <div class="payment-method-select">✓</div>
+            </div>
+        </div>
+        <div class="payment-modal-actions">
+            <button class="btn btn-success" onclick="proceedToPayment()" data-i18n="continue_to_pay">Continue to Payment</button>
+            <button class="btn btn-back" onclick="closePaymentMethodModal()" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+    <!-- Payment Modal (moved outside .container to ensure overlay visibility) -->
+    <!-- Seat Selection Modal (choose seat before payment) -->
+    <div id="seat-modal" class="modal" aria-hidden="true">
+        <div class="modal-content seat-modal-content ethiopian-seat-modal">
+            <div class="ethiopian-seat-modal-grid">
+                <!-- Left: Passengers -->
+                <div class="ethiopian-seat-modal-left">
+                    <div class="ethiopian-seat-modal-title">Passengers</div>
+                    <div class="ethiopian-seat-modal-passenger-list">
+                        <div class="ethiopian-seat-modal-passenger active">
+                            <span class="ethiopian-seat-modal-passenger-seat" id="seat-passenger-seat">A1</span>
+                            <span class="ethiopian-seat-modal-passenger-name" id="seat-passenger-name">respect-world keiven</span>
+                            <span class="ethiopian-seat-modal-select-seat">(select seat)</span>
+                        </div>
+                    </div>
+                    <div class="ethiopian-seat-modal-legend">
+                        <div class="ethiopian-seat-modal-legend-title">LEGEND</div>
+                        <div class="ethiopian-seat-modal-legend-items">
+                            <div class="ethiopian-seat-modal-legend-item"><span class="ethiopian-seat-modal-legend-box reserved"></span> Reserved Seat</div>
+                            <div class="ethiopian-seat-modal-legend-item"><span class="ethiopian-seat-modal-legend-box available"></span> Available Seat</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Center: Seat Map Only -->
+                <div class="ethiopian-seat-modal-center">
+                    <div class="ethiopian-seat-modal-seatmap-wrapper">
+                        <div class="ethiopian-seat-modal-seatmap-labels">
+                            <div class="ethiopian-seat-modal-seatmap-cols">
+                                <span>A</span>
+                                <span>B</span>
+                                <span>C</span>
+                                <span>J</span>
+                                <span>K</span>
+                                <span>L</span>
+                            </div>
+                        </div>
+                        <div id="ethiopian-seat-map" class="ethiopian-seat-modal-seatmap">
+                            <!-- Seat map grid will be rendered here by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ethiopian-seat-modal-footer">
+                <button class="ethiopian-seat-modal-btn" id="ethiopian-seat-modal-continue">Continue</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="payment-modal" class="modal">
+        <div class="payment-modal-content">
+            <div class="payment-modal-header">
+                <h3 data-i18n="payment_for">Payment for <span id="payment-flight"></span></h3>
+            </div>
+            <div class="payment-modal-amount">
+                <p data-i18n="amount">Amount: $ <span id="payment-amount">0</span></p>
+            </div>
+            <div class="payment-modal-form">
+                <div class="form-group">
+                    <label for="card-number" data-i18n="card_number">Card Number</label>
+                    <input type="text" id="card-number" data-i18n-placeholder="card_number" maxlength="19" placeholder="Card Number">
+                    <small style="color: #666; font-size: 12px;" data-i18n="card_number_help">Enter 13-19 digit card number</small>
+                </div>
+                <div class="form-group">
+                    <label for="card-cvv" data-i18n="cvv">CVV</label>
+                    <input type="text" id="card-cvv" data-i18n-placeholder="cvv" maxlength="4" placeholder="CVV">
+                    <small style="color: #666; font-size: 12px;" data-i18n="cvv_help">Enter 3 or 4 digit CVV</small>
+                </div>
+                <div class="form-group">
+                    <label for="card-expiry" data-i18n="expiry_date">MM/YY</label>
+                    <input type="text" id="card-expiry" data-i18n-placeholder="expiry_date" maxlength="5" placeholder="MM/YY">
+                    <small style="color: #666; font-size: 12px;" data-i18n="expiry_help">Format: MM/YY (e.g., 12/25)</small>
+                </div>
+                <div class="payment-modal-actions">
+                    <button class="btn btn-success" onclick="processPayment()" data-i18n="pay_now">Pay Now</button>
+                    <button class="btn btn-back" onclick="closeModal()" data-i18n="cancel">Cancel</button>
+                </div>
+            </div>
+            <div id="payment-message" class="message"></div>
+        </div>
+    </div>
+
+    <!-- Manage Seats Modal (moved outside .container) -->
+    <div id="manage-seats-modal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="update_seats">Update Seats <span id="manage-flight-number"></span></h3>
+            <div class="form">
+                <div class="form-group">
+                    <label for="new-seats" data-i18n="new_seats">New number of seats</label>
+                    <input type="number" id="new-seats" data-i18n-placeholder="new_seats" min="0" placeholder="New number of seats">
+                </div>
+                <button class="btn btn-warning" onclick="updateSeats()" data-i18n="update_seats">Update Seats</button>
+                <button class="btn btn-back" onclick="closeSeatsModal()" data-i18n="cancel">Cancel</button>
+            </div>
+            <div id="manage-seats-message" class="message"></div>
+        </div>
+    </div>
+<!-- Edit Flight Modal -->
+<div id="edit-flight-modal" class="modal">
+    <button data-i18n="edit_flight">Edit Flight</button>
+    <div class="modal-content payment-modal-content">
+        <div class="payment-modal-header">
+            <h3>Edit Flight <span id="edit-flight-number"></span></h3>
+        </div>
+        <div class="payment-modal-form">
+            <form id="edit-flight-form" onsubmit="updateFlight(event)">
+                <input type="hidden" id="edit-flight-original-number">
+                
+                <div class="form-group">
+                    <label for="edit-flight-number-input">Flight Number</label>
+                    <input type="text" id="edit-flight-number-input" required placeholder="Flight Number">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-flight-source">From</label>
+                    <input type="text" id="edit-flight-source" required placeholder="Departure City">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-flight-destination">To</label>
+                    <input type="text" id="edit-flight-destination" required placeholder="Destination City">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-flight-time">Departure Time (HH:MM)</label>
+                    <input type="text" id="edit-flight-time" required placeholder="08:00">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-flight-seats">Seats Available</label>
+                    <input type="number" id="edit-flight-seats" min="0" required placeholder="Seats Available">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-flight-price">Price ($)</label>
+                    <input type="number" id="edit-flight-price" min="0" step="0.01" required placeholder="Price">
+                </div>
+                
+                <div class="payment-modal-actions">
+                    <button type="submit" class="btn btn-success">Update Flight</button>
+                    <button type="button" class="btn btn-back" onclick="closeEditFlightModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div id="edit-flight-message" class="message"></div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-confirmation-modal" class="modal">
+    <button data-i18n="delete_flight">Delete Flight</button>
+    <div class="modal-content">
+        <h3>Confirm Delete</h3>
+        <p>Are you sure you want to delete flight <span id="delete-flight-number"></span>?</p>
+        <p class="warning-text">This action cannot be undone!</p>
+        <div class="modal-actions">
+            <button class="btn btn-danger" onclick="deleteFlight()">Yes, Delete</button>
+            <button class="btn btn-back" onclick="closeDeleteConfirmationModal()">Cancel</button>
+        </div>
+        <div id="delete-message" class="message"></div>
+    </div>
+</div>
+<!-- Cancel Booking Modal -->
+<div id="cancel-booking-modal" class="modal">
+    <div class="modal-content">
+        <h3 data-i18n="cancel_booking_title">Cancel Booking</h3>
+        <p data-i18n="cancel_booking_text">Are you sure you want to cancel this booking?</p>
+        <div class="refund-info">
+            <p data-i18n="refund_policy">Refund Policy:</p>
+            <ul>
+                <li data-i18n="refund_1">• Cancellation within 24 hours: 90% refund</li>
+                <li data-i18n="refund_2">• Cancellation within 48 hours: 75% refund</li>
+                <li data-i18n="refund_3">• Cancellation after 48 hours: 50% refund</li>
+            </ul>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-danger" onclick="confirmCancelBooking()" data-i18n="confirm_cancel">Yes, Cancel Booking</button>
+            <button class="btn btn-back" onclick="closeCancelModal()" data-i18n="keep_booking">No, Keep Booking</button>
+        </div>
+        <div id="cancel-message" class="message"></div>
+    </div>
+</div>
+
+<!-- Delay Booking Modal -->
+<div id="delay-booking-modal" class="modal">
+    <div class="modal-content payment-modal-content">
+        <div class="payment-modal-header">
+            <h3 data-i18n="delay_booking_title">Delay Your Booking</h3>
+        </div>
+<div class="payment-modal-form">
+    <div class="form-group">
+        <label data-i18n="select_day">Select Day:</label>
+        <select id="day-select" onchange="updateDelayPrice()">
+            <option value="" data-i18n="choose_day">Choose a day</option>
+            <option value="monday">Monday</option>
+            <option value="tuesday">Tuesday</option>
+            <option value="wednesday">Wednesday</option>
+            <option value="thursday">Thursday</option>
+            <option value="friday">Friday</option>
+            <option value="saturday">Saturday</option>
+            <option value="sunday">Sunday</option>
+        </select>
+    </div>
+<div class="day-surcharge-grid">
+    <div class="day-surcharge-item">
+        <span class="day">Monday</span>
+        <span class="surcharge low">No surcharge</span>
+    </div>
+    <div class="day-surcharge-item">
+        <span class="day">Tuesday</span>
+        <span class="surcharge">+10%</span>
+    </div>
+    <div class="day-surcharge-item">
+        <span class="day">Wednesday</span>
+        <span class="surcharge">+20%</span>
+    </div>
+    <div class="day-surcharge-item">
+        <span class="day">Thursday</span>
+        <span class="surcharge">+15%</span>
+    </div>
+    <div class="day-surcharge-item">
+        <span class="day">Friday</span>
+        <span class="surcharge high">+25%</span>
+    </div>
+    <div class="day-surcharge-item">
+        <span class="day">Saturday</span>
+        <span class="surcharge high">+30%</span>
+    </div>
+    <div class="day-surcharge-item">
+        <span class="day">Sunday</span>
+        <span class="surcharge high">+35%</span>
+    </div>
+</div>
+    <div class="form-group">
+        <label data-i18n="delay_reason">Reason for Delay (Optional):</label>
+        <select id="delay-reason">
+            <option value="" data-i18n="choose_reason">Choose a reason</option>
+            <option value="personal" data-i18n="reason_personal">Personal reasons</option>
+            <option value="emergency" data-i18n="reason_emergency">Emergency</option>
+            <option value="schedule" data-i18n="reason_schedule">Schedule conflict</option>
+            <option value="other" data-i18n="reason_other">Other</option>
+        </select>
+    </div>
+    
+    <div class="delay-flight-info" id="delay-flight-info" style="display: none;">
+        <div class="message info">
+            <strong>Assigned Flight:</strong> <span id="assigned-flight-number">ET701</span><br>
+            <strong>Departure Time:</strong> <span id="assigned-departure-time">08:00</span>
+        </div>
+    </div>
+    
+    <div class="price-comparison">
+        <div class="price-item">
+            <span data-i18n="original_price">Original Price:</span>
+            <span id="original-price">$0</span>
+        </div>
+        <div class="price-item">
+            <span data-i18n="new_price">New Price:</span>
+            <span id="new-price">$0</span>
+        </div>
+        <div class="price-item">
+            <span>Delay Surcharge:</span>
+            <span id="delay-surcharge">$0</span>
+        </div>
+        <div class="price-item">
+            <span>Rebooking Fee:</span>
+            <span id="rebooking-fee">$25</span>
+        </div>
+        <div class="price-item total">
+            <span data-i18n="price_difference">Total Price:</span>
+            <span id="price-difference">$0</span>
+        </div>
+    </div>
+    
+    <div class="delay-fee-note">
+        <p data-i18n="delay_fee_note">Note: A $25 rebooking fee applies for all flight changes.</p>
+    </div>
+    
+<div class="payment-modal-actions">
+    <button class="btn btn-success" onclick="processDelayBooking()" data-i18n="confirm_delay">Confirm Delay</button>
+    <button class="btn btn-back" onclick="closeDelayModal()" data-i18n="cancel_delay">Cancel</button>
+</div>
+<div id="delay-message" class="message"></div>
+    
+</div>
+
+<!-- Seat Selection Modal -->
+<div id="seat-modal" class="modal">
+    <div class="modal-content ethiopian-seat-modal">
+        <h2 data-i18n="select_seat">Select Your Seat</h2>
+        <p><strong data-i18n="flight">Flight:</strong> <span id="seat-flight"></span></p>
+        <p><strong data-i18n="passenger">Passenger:</strong> <span id="seat-passenger-name"></span></p>
+        
+        <!-- Seat Map Grid -->
+        <div id="ethiopian-seat-map"></div>
+        
+        <!-- Seat Legend -->
+        <div class="seat-legend">
+            <div class="seat-legend-item">
+                <div class="seat-legend-box available"></div>
+                <span data-i18n="available">Available</span>
+            </div>
+            <div class="seat-legend-item">
+                <div class="seat-legend-box selected"></div>
+                <span data-i18n="selected">Selected</span>
+            </div>
+            <div class="seat-legend-item">
+                <div class="seat-legend-box reserved"></div>
+                <span data-i18n="occupied">Occupied</span>
+            </div>
+        </div>
+        
+        <div class="modal-actions">
+            <button id="ethiopian-seat-modal-continue" class="btn btn-primary" data-i18n="continue">Continue to Payment</button>
+            <button class="btn btn-secondary" onclick="closeSeatModal()" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Method Modal -->
+<div id="payment-method-modal" class="modal">
+    <div class="modal-content">
+        <h3 data-i18n="select_payment_method">Select Payment Method</h3>
+        <div class="payment-flight-summary">
+            <p><strong data-i18n="flight">Flight:</strong> <span id="method-flight-info"></span></p>
+            <p><strong data-i18n="total_amount">Total Amount:</strong> $<span id="method-payment-amount"></span></p>
+        </div>
+        
+        <div class="payment-methods-grid">
+            <div class="payment-method-card" onclick="selectPaymentMethod('Visa')">
+                <div class="method-icon">💳</div>
+                <div class="method-name">Visa / MasterCard</div>
+            </div>
+            <div class="payment-method-card" onclick="selectPaymentMethod('PayPal')">
+                <div class="method-icon">🅿️</div>
+                <div class="method-name">PayPal</div>
+            </div>
+            <div class="payment-method-card" onclick="selectPaymentMethod('Bank Transfer')">
+                <div class="method-icon">🏦</div>
+                <div class="method-name">Bank Transfer</div>
+            </div>
+            <div class="payment-method-card" onclick="selectPaymentMethod('Mobile Money')">
+                <div class="method-icon">📲</div>
+                <div class="method-name">Telebirr / M-Pesa</div>
+            </div>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="proceedToPayment()" data-i18n="proceed">Proceed</button>
+            <button class="btn btn-secondary" onclick="closePaymentMethodModal()" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Details Modal (Visa/MasterCard) -->
+<div id="payment-modal" class="modal">
+    <div class="modal-content">
+        <h3 data-i18n="visa_mastercard_payment">Visa / MasterCard Payment</h3>
+        <div class="payment-flight-summary">
+            <p><strong data-i18n="flight">Flight:</strong> <span id="payment-flight"></span></p>
+            <p><strong data-i18n="amount">Amount:</strong> $<span id="payment-amount"></span></p>
+        </div>
+        
+        <form id="payment-form" onsubmit="event.preventDefault(); processPayment();">
+            <div class="form-group">
+                <label for="card-number" data-i18n="card_number">Card Number</label>
+                <input type="text" id="card-number" placeholder="0000 0000 0000 0000" maxlength="19" required>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="card-cvv">CVV</label>
+                    <input type="password" id="card-cvv" placeholder="123" maxlength="4" required>
+                </div>
+                <div class="form-group">
+                    <label for="card-expiry" data-i18n="expiry_date">Expiry Date</label>
+                    <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5" required>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary" data-i18n="pay_now">Pay Now</button>
+                <button type="button" class="btn btn-secondary" onclick="closePaymentModal()" data-i18n="cancel">Cancel</button>
+            </div>
+        </form>
+        <div id="payment-message" class="message"></div>
+    </div>
+</div>
+
+<!-- Rate Us Modal -->
+<div id="rate-us-modal" class="modal">
+    <div class="modal-content rate-modal-content">
+        <h3 data-i18n="rate_us_title">Rate Your Experience</h3>
+        <p data-i18n="rate_us_subtitle">How was your booking experience?</p>
+        
+        <div class="star-rating">
+            <span class="star" data-value="1">★</span>
+            <span class="star" data-value="2">★</span>
+            <span class="star" data-value="3">★</span>
+            <span class="star" data-value="4">★</span>
+            <span class="star" data-value="5">★</span>
+        </div>
+        
+        <div class="form-group">
+            <textarea id="feedback-comment" placeholder="Tell us more about your experience..." rows="3"></textarea>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn btn-primary" onclick="submitRating()" data-i18n="submit_feedback">Submit Feedback</button>
+            <button class="btn btn-secondary" onclick="closeRateModal()" data-i18n="maybe_later">Maybe Later</button>
+        </div>
+        <div id="rate-message" class="message"></div>
+    </div>
+</div>
+
+    <!-- Airline Footer -->
+    <div class="airline-footer">
+        <div class="airline-contact">
+            <div class="airline-contact-item">
+                <span>📞</span> <span>+251 11 125 1010</span>
+            </div>
+            <div class="airline-contact-item">
+                <span>✉️</span> <span>customerservice@ethiopianairlines.com</span>
+            </div>
+            <div class="airline-contact-item">
+                <span>🌐</span> <span>www.ethiopianairlines.com</span>
+            </div>
+        </div>
+        <p>© 2025 Ethiopian Airlines. All rights reserved.</p>
+        <p>The Leading airline of Africa ✈️</p>
+    </div>
+
+
+    <!-- Edit Flight Modal -->
+    <div id="edit-flight-modal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="edit_flight">Edit Flight</h3>
+            <form id="edit-flight-form" onsubmit="updateFlight(event)">
+                <input type="hidden" id="edit-flight-id">
+                <div class="form-group">
+                    <label for="edit-flight-number" data-i18n="flight_number">Flight Number</label>
+                    <input type="text" id="edit-flight-number" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-source" data-i18n="from">From</label>
+                    <input type="text" id="edit-source" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-destination" data-i18n="to">To</label>
+                    <input type="text" id="edit-destination" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-time" data-i18n="departure_time">Departure Time</label>
+                    <input type="text" id="edit-time" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-seats" data-i18n="seats_available">Seats Available</label>
+                    <input type="number" id="edit-seats" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-price" data-i18n="price">Price ($)</label>
+                    <input type="number" id="edit-price" step="0.01" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary" data-i18n="save_changes">Save Changes</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditFlightModal()" data-i18n="cancel">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cancel Booking Modal -->
+    <div id="cancel-booking-modal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="confirm_cancellation">Confirm Cancellation</h3>
+            <p data-i18n="cancel_warning">Are you sure you want to cancel this booking? This action cannot be undone.</p>
+            <div id="cancel-message"></div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="confirmCancelBooking()" data-i18n="confirm">Confirm Cancellation</button>
+                <button class="btn btn-secondary" onclick="closeCancelModal()" data-i18n="back">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rate System Modal -->
+    <div id="rate-modal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="rate_our_service">Rate Our Service</h3>
+            <div class="star-rating">
+                <span class="star" data-value="1">★</span>
+                <span class="star" data-value="2">★</span>
+                <span class="star" data-value="3">★</span>
+                <span class="star" data-value="4">★</span>
+                <span class="star" data-value="5">★</span>
+            </div>
+            <textarea id="feedback-comment" data-i18n-placeholder="your_comments" placeholder="Your comments..."></textarea>
+            <div id="rate-message"></div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="submitRating()" data-i18n="submit">Submit</button>
+                <button class="btn btn-secondary" onclick="closeRateModal()" data-i18n="close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="services.js"></script>
+
+    <script src="script.js"></script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+
+</body>
+</html>
