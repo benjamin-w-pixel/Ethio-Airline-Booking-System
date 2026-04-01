@@ -1249,7 +1249,9 @@ function quickLoginPassenger(name) {
     const passenger = passengers.find(p => p.name === name);
     if (passenger) {
         document.getElementById('login-username').value = passenger.username;
-        showMessage('passenger-login-message', `Auto-filled ${passenger.name}. Enter password to login.`, 'info');
+        document.getElementById('login-password').value = passenger.password || "12345678";
+        showMessage('passenger-login-message', `Logging in as ${passenger.name}...`, 'info');
+        setTimeout(() => document.querySelector('#passenger-login-form button[type="submit"]').click(), 300);
     }
 }
 
@@ -1257,7 +1259,9 @@ function quickLoginAdmin(username) {
     const admin = admins.find(a => a.username === username);
     if (admin) {
         document.getElementById('admin-login-username').value = admin.username;
-        showMessage('admin-login-message', `Auto-filled ${admin.username}. Enter password to login.`, 'info');
+        document.getElementById('admin-login-password').value = admin.password || (admin.username === 'admin' ? 'admin123' : 'keiven12a');
+        showMessage('admin-login-message', `Logging in as ${admin.username}...`, 'info');
+        setTimeout(() => document.querySelector('#admin-login-form button[type="submit"]').click(), 300);
     }
 }
 

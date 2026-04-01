@@ -101,4 +101,42 @@ If you prefer Microsoft SQL Server over SQLite:
 
 ---
 
-**Built with  biniyam for Ethiopian Airlines**
+**Built with ❤️ for Ethiopian Airlines**
+
+---
+
+## 🎨 Screenshots & UI
+*(Coming Soon - Placeholders for UI previews)*
+- **Home Page**: Modern search functionality.
+- **Seat Map**: Interactive layout with instant feedback.
+- **Admin Panel**: Comprehensive dashboard to manage bookings.
+
+---
+
+## 📁 Project Architecture
+
+```plaintext
+/Ethiopian-Airline-Booking-System-main
+├── index.html            # Main front-end entry point
+├── style.css             # UI styling & tokens
+├── script_clean.js       # Core logic and DOM manipulation
+├── script_additions.js   # Additional logic & interaction enhancements
+├── /api                  # PHP backend endpoints
+│   ├── /auth             # Authentication API
+│   ├── /flights          # Search APIs
+│   └── /bookings         # Booking management
+├── /database             # SQLite database and scripts
+└── README.md             # This file
+```
+
+---
+
+## 🤝 Contributing
+1. Fork the project.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+---
+© 2026 Ethiopian Airline Booking System. All Rights Reserved.
